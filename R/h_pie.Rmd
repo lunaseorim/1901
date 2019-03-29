@@ -1,0 +1,58 @@
+---
+title: "Pie chart"
+author: "김희수"
+date: "2019년 3월 30일"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+## Data
+
+```{r}
+#data
+poll <- c(82.9, 12.6, 4.5)
+names(poll) <- c("찬성", "반대", "모름/무응답")
+text_x <- 0.75 * cos(c(0, 
+                       ((25 + 4.5) + (25 + 4.5 + 12.6)) * pi / 100, 
+                       (25 + (25 + 4.5)) * pi / 100))
+text_y <- 0.75 * sin(c(0, 
+                       ((25 + 4.5) + (25 + 4.5 + 12.6)) * pi / 100, 
+                       (25 + (25 + 4.5)) * pi / 100))
+text_x[1] = 0.65 #위치조정
+
+#text label
+text_perc <- paste0(poll, "%")
+text_label <- paste0(names(poll),"\n",text_perc)
+kable(t(as.matrix(poll)), caption = "고위공직자 범죄수사처 설립 찬반")
+
+```
+
+## `pie()`
+
+```{r}
+par(bg = "lightgrey")
+pie(poll,
+    labels = NA, 
+    radius = 1.1,
+    clockwise = TRUE, 
+    init.angle = 90, 
+    col = c("#1F739F", "#9B2136", "#959096"),
+    border = NA)
+par(new = TRUE)
+pie(1,
+    labels = "",
+    radius = 0.34,
+    border = NA,
+    col = "lightgrey")
+text(x = text_x, 
+     y = text_y, 
+     labels = text_label, 
+     col = "white", 
+     cex = c(1.6,1.6,1.2))
+title(main = "고위공직자 범죄수사처 설립 찬반",
+      cex.main = 2)
+```

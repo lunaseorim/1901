@@ -1,0 +1,15 @@
+"0","par(bg = ""lightgrey"")"
+"2","Warning message:
+"
+"2","In strsplit(code, ""\n"", fixed = TRUE) :"
+"2","
+ "
+"2"," input string 1 is invalid in this locale
+"
+"0","pie(poll,"
+"0","    labels = NA, "
+"0","    radius = 1.1,"
+"0","    clockwise = TRUE, "
+"0","    init.angle = 90, "
+"0","    col = c(""#1F739F"", ""#9B2136"", ""#959096""),"
+"0","    border = NA)"
