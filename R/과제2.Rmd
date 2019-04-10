@@ -1,0 +1,91 @@
+---
+title: "Untitled"
+author: "김희수"
+date: "2019년 4월 11일"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(raster)
+library(rgeos)
+library(maptools)
+```
+
+## R Markdown
+
+```{r cars}
+
+A1 <- read.csv("./doc/hong.csv")
+
+A2[,2:ncol(A1)] <- t(apply(A1[,-1],1,function(x)cumsum(x)))
+
+colnames(A2) <- c("locate","id",paste0("week",1:52))
+
+A2$id <- c(0:6,8:16,7)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure}
+
+korea <- shapefile("data/TL_SCCO_CTPRVN.shp")
+korea <- spTransform(korea,CRS("+proj=longlat"))
+korea_map <- fortify(korea)
+merge_result <- merge(korea_map,A2,by='id')
+
+p <- ggplot() +
+  geom_polygon(data = merge_result,
+               aes(x=long,y=lat,group=group, fill = week1))
+
+p +
+  scale_fill_gradient(low = 'white',high='orange')
+  
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r }
+
+p1 <- ggplot() +
+  geom_polygon(data = merge_result,
+               aes(x=long,y=lat,group=group, fill = week1)) +
+  scale_fill_gradient(low = 'white',high='orange')
+p1
+
+p2 <- ggplot() +
+  geom_polygon(data = merge_result,
+               aes(x=long,y=lat,group=group, fill = week2)) +
+  scale_fill_gradient(low = 'white',high='orange')
+
+p2
+p3 <- ggplot() +
+  geom_polygon(data = merge_result,
+               aes(x=long,y=lat,group=group, fill = week3)) +
+  scale_fill_gradient(low = 'white',high='orange')
+p3
+
+p4 <- ggplot() +
+  geom_polygon(data = merge_result,
+               aes(x=long,y=lat,group=group, fill = week4)) +
+  scale_fill_gradient(low = 'white',high='orange')
+p4
+p5 <- ggplot() +
+  geom_polygon(data = merge_result,
+               aes(x=long,y=lat,group=group, fill = week5)) +
+  scale_fill_gradient(low = 'white',high='orange')
+p5
+p6 <- ggplot() +
+  geom_polygon(data = merge_result,
+               aes(x=long,y=lat,group=group, fill = week6)) +
+  scale_fill_gradient(low = 'white',high='orange')
+p6
+
+```

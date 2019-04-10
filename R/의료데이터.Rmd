@@ -1,0 +1,41 @@
+---
+title: "Untitled"
+author: "김희수"
+date: "2019년 4월 3일"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+## Read Data
+
+```{r Read}
+A1 <- read.csv("../doc/NHIS_OPEN_T20_2016.csv")
+M1 <- read.csv("../doc/mise.csv")
+B1 <- A1[grep("J20.+",A1$주상병코드),]
+B1_2 <- B1[B1$부상병코드 == "J304",]
+B1_2 <- B1_2[B1_2$시도코드 == 11,]
+
+B1_table <- table(B1_2$요양개시일자) %>%
+  as.data.frame() %>%
+  mutate("pm10" = M1$pm10,
+         "pm2.5" =M1$pm2.5)
+
+
+
+```
+
+## 
+
+```{r pressure}
+attach(B1_table)
+m1 <- lm(log(Freq)~log(pm10))
+plot(Freq~pm10) +
+abline(m1,col="blue")
+summary(m1)
+plot(m1)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

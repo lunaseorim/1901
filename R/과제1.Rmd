@@ -1,0 +1,95 @@
+---
+title: "Untitled"
+author: "김희수"
+date: "2019년 4월 6일"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+```
+
+## Read Data
+
+```{r Read Data}
+A1 <- read.csv("doc/tracking.csv")
+
+
+```
+
+## Including Plots
+
+```{r }
+#주말/평일
+A1$week <- c(rep("평일",24*2),rep("주말",24*2),rep("평일",24*5),rep("주말",24))
+
+A1$week <- as.factor(A1$week)
+A1$시간 <- as.factor(A1$시간)
+str(A1)
+
+A1_NARM <- A1 %>%
+  filter(!is.na(걸음수))
+
+#전체평균
+A1_M <- round(mean(A1$걸음수, na.rm = T),2)
+
+#시간평균
+B1_H <- AZero %>% 
+  plyr::ddply(.,~시간,summarize, 걸음수 = round(mean(걸음수,na.rm = T),2))
+
+B1 <- summarise(group_by(AZero,시간,week),mean = mean(걸음수,na.rm = T))
+
+B1_H[,3] <- rep("mean",12)
+
+B1 <- rbind(B1,B1_H[,c(1,3,2)])
+
+B1_2 <- data.frame("time" = 1:24,
+                   "weekend" = B1[B1$week == "주말",3],
+                   "weekday" = B1[B1$week == "평일",3],
+                   "mean" = B1_H[,2]) %>%
+  `colnames<-`(c("time","weekend","weekday","mean"))
+```
+
+## Plot
+
+```{r Plot}
+B1 %>% 
+  ggplot(mapping = aes(x = 시간,
+                       y = mean,fill = week)) +
+  geom_bar(stat = "identity",position = "dodge") +
+  ylim(0,max(B1$mean)*1.1) +
+  scale_x_continuous(breaks = seq(0,24,4)) +
+  geom_abline(intercept=A1_M, slope=0, colour="red", size=0.5) +
+  annotate("text",x=2,y=790,label = A1_M,col = "blue")
+
+ B1 %>% 
+   ggplot(mapping = aes(x = 시간,
+                        y = mean,fill = week)) +
+   geom_bar(stat = "identity",position = "dodge") +
+   ylim(0,max(B1$mean)*1.1) +
+   scale_x_continuous(breaks = seq(0,24,4)) +
+   geom_abline(intercept=A1_M, slope=0, colour="red", size=0.5) +
+   annotate("text",x=2,y=790,label = A1_M,col = "blue")
+
+B1_2 %>% 
+  ggplot() +
+  geom_line(mapping = aes(x = time,y = weekday)) +
+  geom_area(aes(x = time,y = weekday,colour ='black', fill='black'),alpha=0.7) +
+  geom_area(aes(x = time,y = weekend, fill='red'), alpha=0.7) +
+  ylim(0,max(B1$mean)*1.1) +
+  geom_abline(intercept=A1_M, slope=0, colour="red", size=0.5) +
+  annotate("text",x=2,y=790,label = A1_M,col = "blue")
+
+
+AZero <- A1
+AZero[is.na(AZero$걸음수),3] <- 0
+
+ggplot(data=AZero,aes(x=시간,y=일자,fill=걸음수))+
+  geom_tile() +  
+  scale_fill_gradient(low = "white", high = "red") +
+  scale_x_continuous(breaks = seq(0,24,4))
+
+
+```
+
