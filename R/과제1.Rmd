@@ -42,7 +42,11 @@ B1 <- summarise(group_by(AZero,시간,week),mean = mean(걸음수,na.rm = T))
 
 B1_H[,3] <- rep("mean",12)
 
+<<<<<<< HEAD
 B1 <- rbind(B1,B1_H[,c(1,3,2)])
+=======
+B1[49:72,] <- B1_H[,c(1,3,2)]
+>>>>>>> 17a8d16c1f63475489268b6f2ff1d2fe7ed9a45f
 
 B1_2 <- data.frame("time" = 1:24,
                    "weekend" = B1[B1$week == "주말",3],
@@ -65,8 +69,13 @@ B1 %>%
 
  B1 %>% 
    ggplot(mapping = aes(x = 시간,
+<<<<<<< HEAD
                         y = mean,fill = week)) +
    geom_bar(stat = "identity",position = "dodge") +
+=======
+                        y = mean,col = week)) +
+   geom_line(stat = "identity",position = "dodge") +
+>>>>>>> 17a8d16c1f63475489268b6f2ff1d2fe7ed9a45f
    ylim(0,max(B1$mean)*1.1) +
    scale_x_continuous(breaks = seq(0,24,4)) +
    geom_abline(intercept=A1_M, slope=0, colour="red", size=0.5) +
