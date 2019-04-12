@@ -19,73 +19,126 @@ library(maptools)
 
 ```{r cars}
 
-A1 <- read.csv("./doc/hong.csv")
-
-A2[,2:ncol(A1)] <- t(apply(A1[,-1],1,function(x)cumsum(x)))
+A1 <- read.csv("../doc/hong.csv")
+A2 <- A1
+A2[,2:ncol(A1)] <- t(apply(A1[,-1],1,function(x)cumsum(x))) #세로로 누적
+A3 <- as.data.frame(apply(A1[,-1],1,function(x)cumsum(x)))
+colnames(A3) <- A2$locate
+A3$op <- c("id",paste0("week",1:52))
 
 colnames(A2) <- c("locate","id",paste0("week",1:52))
-
-A2$id <- c(0:6,8:16,7)
+A2$id <- c(0:6,8:16,7) #merge용 id부여
 
 ```
 
-## Including Plots
+## Merge & Paint
 
-You can also embed plots, for example:
+```{r }
 
-```{r pressure}
-
-korea <- shapefile("data/TL_SCCO_CTPRVN.shp")
+korea <- shapefile("../data/TL_SCCO_CTPRVN.shp")
 korea <- spTransform(korea,CRS("+proj=longlat"))
 korea_map <- fortify(korea)
 merge_result <- merge(korea_map,A2,by='id')
 
 p <- ggplot() +
   geom_polygon(data = merge_result,
-               aes(x=long,y=lat,group=group, fill = week1))
-
-p +
+               aes(x=long,y=lat,group=group, fill = week2))+
   scale_fill_gradient(low = 'white',high='orange')
-  
+
+p
+ggsave(filename = paste0("../pic/OK_",2,".png"),
+       width = 7,height=7,dpi = 150)
 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Get gif (Animation)
 
 ```{r }
 
-p1 <- ggplot() +
-  geom_polygon(data = merge_result,
-               aes(x=long,y=lat,group=group, fill = week1)) +
-  scale_fill_gradient(low = 'white',high='orange')
-p1
+plot <- function(ok,long,lat,group){
+  ggplot() +
+    geom_polygon(data = merge_result,
+                 aes(x=long,y=lat,
+                            group=group,
+                            fill = ok))}
 
-p2 <- ggplot() +
-  geom_polygon(data = merge_result,
-               aes(x=long,y=lat,group=group, fill = week2)) +
-  scale_fill_gradient(low = 'white',high='orange')
 
-p2
-p3 <- ggplot() +
-  geom_polygon(data = merge_result,
-               aes(x=long,y=lat,group=group, fill = week3)) +
-  scale_fill_gradient(low = 'white',high='orange')
-p3
+list.files(path = "../pic/", pattern = "*.png", full.names = T) %>%
+   map(image_read) %>%
+  image_join() %>%
+  image_animate(fps=2) %>%
+  image_write("A1.gif")
 
-p4 <- ggplot() +
-  geom_polygon(data = merge_result,
-               aes(x=long,y=lat,group=group, fill = week4)) +
-  scale_fill_gradient(low = 'white',high='orange')
-p4
-p5 <- ggplot() +
-  geom_polygon(data = merge_result,
-               aes(x=long,y=lat,group=group, fill = week5)) +
-  scale_fill_gradient(low = 'white',high='orange')
-p5
-p6 <- ggplot() +
-  geom_polygon(data = merge_result,
-               aes(x=long,y=lat,group=group, fill = week6)) +
-  scale_fill_gradient(low = 'white',high='orange')
-p6
+```
 
+## Neural Networks From 'NNET' Package
+
+```{r}
+getDataSet<-function(item,from,to,size){
+  dataframe<-NULL
+  to<-to-size+1
+  for(i in from:to) {
+    start<-i
+    end<-start+size-1
+    temp<-item[c(start:end)]
+    dataframe<-rbind(dataframe,t(temp))
+  }
+  return(dataframe)
+}
+
+INPUT_NODES<-4
+HIDDEN_NODES<-INPUT_NODES*2
+OUTPUT_NODES<-2
+ITERATION<-500
+
+in_learning<-getDataSet(A3$전남,1,8,INPUT_NODES)
+in_learning 
+
+out_learning<-getDataSet(A3$전남,3,8,OUTPUT_NODES)
+out_learning
+
+model<-nnet(in_learning,out_learning,size=HIDDEN_NODES,linout = TRUE,rang = 0.1,skip=TRUE,maxit = ITERATION)
+
+in_forecasting<-getDataSet(A3$전남,5,8,INPUT_NODES)
+in_forecasting
+
+predicted_values<-predict(model,in_forecasting,type="raw")
+predicted_values
+
+real<-getDataSet(A3$전남,8,9,OUTPUT_NODES)
+real
+
+ERR<-abs(real-predicted_values)
+MAPE<-mean(ERR/real)*100
+MAPE
+
+plot(c(1:2),real, type="o", col="blue")
+lines(c(1:2),predicted_values, type="o", col="red")
+
+#예측
+
+in_learning<-getDataSet(A3$전남,1,18,INPUT_NODES)
+in_learning
+
+
+out_learning<-getDataSet(A3$전남,5,20,OUTPUT_NODES)
+out_learning
+
+model<-nnet(in_learning,out_learning,size=HIDDEN_NODES,linout = TRUE,rang = 0.1,skip=TRUE,maxit = ITERATION)
+
+
+in_forecasting<-getDataSet(A3$전남,17,20,INPUT_NODES)
+in_forecasting
+
+predicted_values<-predict(model,in_forecasting,type="raw")
+predicted_values
+
+real<-A3$전남[19:20]
+real
+
+plot(1:2,real,xlab="주차",ylab="발생수",ylim = c(2000,3000),type="o")
+lines(2:3,predicted_values,type="o",col="red")
+grid()
+plot(11:20,A3[11:20,13],ylim = c(0,3000))
+lines(19:20,predicted_values,type="o",col="red")
 ```

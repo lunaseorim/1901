@@ -13,7 +13,7 @@ library(tidyverse)
 ## Read Data
 
 ```{r Read Data}
-A1 <- read.csv("doc/tracking.csv")
+A1 <- read.csv("../doc/tracking.csv")
 
 
 ```
@@ -22,7 +22,7 @@ A1 <- read.csv("doc/tracking.csv")
 
 ```{r }
 #주말/평일
-A1$week <- c(rep("평일",24*2),rep("주말",24*2),rep("평일",24*5),rep("주말",24))
+A1$week <- c(rep("평일",24*2),rep("주말",24*2),rep("평일",24*5),rep("주말",24*2),rep("평일",24*4))
 
 A1$week <- as.factor(A1$week)
 A1$시간 <- as.factor(A1$시간)
@@ -35,22 +35,16 @@ A1_NARM <- A1 %>%
 A1_M <- round(mean(A1$걸음수, na.rm = T),2)
 
 #시간평균
-B1_H <- AZero %>% 
+B1_H <- A1 %>% 
   plyr::ddply(.,~시간,summarize, 걸음수 = round(mean(걸음수,na.rm = T),2))
 
-B1 <- summarise(group_by(AZero,시간,week),mean = mean(걸음수,na.rm = T))
+B1 <- plyr::ddply(A1,~시간~week,summarize, 걸음수 = round(mean(걸음수,na.rm = T),2))
 
-B1_H[,3] <- rep("mean",12)
+B1_H[,3] <- as.factor(rep("mean",12))
+colnames(B1_H) <- c("시간","걸음수","week")
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-B1 <- rbind(B1,B1_H[,c(1,3,2)])
-=======
-B1[49:72,] <- B1_H[,c(1,3,2)]
->>>>>>> 17a8d16c1f63475489268b6f2ff1d2fe7ed9a45f
-=======
-B1[49:72,] <- B1_H[,c(1,3,2)]
->>>>>>> 17a8d16c1f63475489268b6f2ff1d2fe7ed9a45f
+B1_bind <- rbind(B1,B1_H)
+
 
 B1_2 <- data.frame("time" = 1:24,
                    "weekend" = B1[B1$week == "주말",3],
@@ -62,29 +56,20 @@ B1_2 <- data.frame("time" = 1:24,
 ## Plot
 
 ```{r Plot}
-B1 %>% 
+B1_bind %>% 
   ggplot(mapping = aes(x = 시간,
-                       y = mean,fill = week)) +
-  geom_bar(stat = "identity",position = "dodge") +
-  ylim(0,max(B1$mean)*1.1) +
-  scale_x_continuous(breaks = seq(0,24,4)) +
+                          y = 걸음수,col = week,
+                          group = week,
+                       fill = week)) +
+  geom_line() +
+  geom_point(size = 4, shape = 21)+
+  ylim(0,max(B1_bind$걸음수)*1.1) +
   geom_abline(intercept=A1_M, slope=0, colour="red", size=0.5) +
   annotate("text",x=2,y=790,label = A1_M,col = "blue")
 
  B1 %>% 
-   ggplot(mapping = aes(x = 시간,
-<<<<<<< HEAD
-<<<<<<< HEAD
-                        y = mean,fill = week)) +
-   geom_bar(stat = "identity",position = "dodge") +
-=======
-                        y = mean,col = week)) +
+   ggplot(mapping = aes(x = 시간, y = mean,col = week)) +
    geom_line(stat = "identity",position = "dodge") +
->>>>>>> 17a8d16c1f63475489268b6f2ff1d2fe7ed9a45f
-=======
-                        y = mean,col = week)) +
-   geom_line(stat = "identity",position = "dodge") +
->>>>>>> 17a8d16c1f63475489268b6f2ff1d2fe7ed9a45f
    ylim(0,max(B1$mean)*1.1) +
    scale_x_continuous(breaks = seq(0,24,4)) +
    geom_abline(intercept=A1_M, slope=0, colour="red", size=0.5) +
@@ -100,13 +85,14 @@ B1_2 %>%
   annotate("text",x=2,y=790,label = A1_M,col = "blue")
 
 
-AZero <- A1
-AZero[is.na(AZero$걸음수),3] <- 0
+B1_Z <- B1
+B1_Z[is.na(B1_Z$걸음수),3] <- 0
+A1_Z <- A1
+A1_Z[is.na(A1_Z$걸음수),3] <- 0
 
-ggplot(data=AZero,aes(x=시간,y=일자,fill=걸음수))+
+ggplot(data=A1_Z,aes(x=시간,y=일자,fill=걸음수))+
   geom_tile() +  
-  scale_fill_gradient(low = "white", high = "red") +
-  scale_x_continuous(breaks = seq(0,24,4))
+  scale_fill_gradient(low = "white", high = "red")
 
 
 ```
