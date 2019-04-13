@@ -19,7 +19,7 @@ library(maptools)
 
 ```{r cars}
 
-A1 <- read.csv("../doc/hong.csv")
+A1 <- read.csv("../doc/hong1.csv")
 A2 <- A1
 A2[,2:ncol(A1)] <- t(apply(A1[,-1],1,function(x)cumsum(x))) #세로로 누적
 A3 <- as.data.frame(apply(A1[,-1],1,function(x)cumsum(x)))
@@ -40,14 +40,7 @@ korea <- spTransform(korea,CRS("+proj=longlat"))
 korea_map <- fortify(korea)
 merge_result <- merge(korea_map,A2,by='id')
 
-p <- ggplot() +
-  geom_polygon(data = merge_result,
-               aes(x=long,y=lat,group=group, fill = week2))+
-  scale_fill_gradient(low = 'white',high='orange')
 
-p
-ggsave(filename = paste0("../pic/OK_",2,".png"),
-       width = 7,height=7,dpi = 150)
 
 ```
 
@@ -62,10 +55,10 @@ plot <- function(ok,long,lat,group){
                             group=group,
                             fill = ok))}
 
+library(magick)
 
 list.files(path = "../pic/", pattern = "*.png", full.names = T) %>%
-   map(image_read) %>%
-  image_join() %>%
+  image_join(.) %>%
   image_animate(fps=2) %>%
   image_write("A1.gif")
 
@@ -141,4 +134,19 @@ lines(2:3,predicted_values,type="o",col="red")
 grid()
 plot(11:20,A3[11:20,13],ylim = c(0,3000))
 lines(19:20,predicted_values,type="o",col="red")
+```
+
+
+```{r}
+p <- ggplot() +
+  geom_polygon(data = merge_result,
+               aes(x=long,y=lat,group=group, fill = week15)) +
+  scale_fill_gradient(low = 'white',high='orange',limits = c(0,160))
+
+p
+
+ggsave(filename = paste0("../pic/OK_",15,".png"),
+       width = 7,height=7,dpi = 150)
+
+
 ```
