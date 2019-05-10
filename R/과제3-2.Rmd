@@ -1,0 +1,86 @@
+---
+title: "BD HW3"
+author: "김희수"
+date: "2019년 5월 10일"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+```
+
+## Data Preprocessing
+
+```{r Data Preprocessing}
+A1 <- read.csv("doc/1111111.csv")
+
+D1 <- A1[,-24] %>%
+  melt(.,id.vars = "Date") %>%
+  na.omit
+
+
+W1 <- A1 %>%
+  melt(., id.vars = c("Date","week")) %>%
+  filter(!is.na(value)) %>%
+  ddply(.,~week~variable,colwise(mean, is.numeric)) 
+
+All_AVG <- mean(W1$value)
+
+W2 <- W1 %>%
+  dcast(variable~week) %>%
+  select(월,화,수,목,금,토,일)
+```
+
+## Plots
+
+```{r Plots, echo=FALSE}
+D1 %>%
+  ggplot() +
+  geom_point(aes(x=Date,y=value,
+                 color = variable)) +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.title.x=element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank())
+
+W1 %>%
+  ggplot() +
+  geom_boxplot(aes(x=week,y=value)) +
+  scale_x_discrete(limits = c("월", "화", "수","목","금","토","일")) +
+  geom_abline(intercept=All_AVG, slope=0, colour="red", size=0.5)
+
+W1 %>%
+  ggplot() +
+  geom_point(aes(x=week,y=value))+
+  scale_x_discrete(limits = c("월", "화", "수","목","금","토","일"))
+
+```
+
+## Test
+
+```{r Test}
+#cor.test
+
+saveCorrel <- numeric(22) 
+
+for (i in 1:22) {
+
+  CorT <- function(a){
+      B1 <- A2[!is.na(A2[,a+1]), a+1]
+      B2 <- match(B1,A2[,a+1])
+      B3 <- A2[B2,25]
+      cor(B1,B3)
+  }
+  
+  saveCorrel[i] <- CorT(i)
+}
+
+Correl <- data.frame(id = paste0("id",1:22),
+                     value = saveCorrel)
+
+write.csv(Correl, "doc/Correl.csv")
+
+```

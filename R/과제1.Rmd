@@ -34,6 +34,17 @@ A1_NARM <- A1 %>%
 #전체평균
 A1_M <- round(mean(A1$걸음수, na.rm = T),2)
 
+A1_D <- plyr::ddply(A1,~일자,summarize, 걸음수 = sum(걸음수,na.rm=T))
+A1_D$수업시간 <- rep("평일",24*2),rep("주말",24*2),rep("평일",24*5),rep("주말",24*2),rep("평일",24*4)
+
+
+lm1 <- lm(걸음수~수업시간,A1_D)
+summary(lm1)
+plot(A1_D$걸음~A1_D$수업시간) +
+abline(lm1,col="blue")
+plot(lm1)
+cor.test(A1_D$걸음수,A1_D$수업시간, method="spearman")
+
 #시간평균
 B1_H <- A1 %>% 
   plyr::ddply(.,~시간,summarize, 걸음수 = round(mean(걸음수,na.rm = T),2))
@@ -57,30 +68,12 @@ B1_2 <- data.frame("time" = 1:24,
 
 ```{r Plot}
 B1_bind %>% 
-  ggplot(mapping = aes(x = 시간,
-                          y = 걸음수,col = week,
-                          group = week,
+  ggplot(mapping = aes(x = 시간, y = 걸음수,
+                       col = week,group = week,
                        fill = week)) +
   geom_line() +
   geom_point(size = 4, shape = 21)+
   ylim(0,max(B1_bind$걸음수)*1.1) +
-  geom_abline(intercept=A1_M, slope=0, colour="red", size=0.5) +
-  annotate("text",x=2,y=790,label = A1_M,col = "blue")
-
- B1 %>% 
-   ggplot(mapping = aes(x = 시간, y = mean,col = week)) +
-   geom_line(stat = "identity",position = "dodge") +
-   ylim(0,max(B1$mean)*1.1) +
-   scale_x_continuous(breaks = seq(0,24,4)) +
-   geom_abline(intercept=A1_M, slope=0, colour="red", size=0.5) +
-   annotate("text",x=2,y=790,label = A1_M,col = "blue")
-
-B1_2 %>% 
-  ggplot() +
-  geom_line(mapping = aes(x = time,y = weekday)) +
-  geom_area(aes(x = time,y = weekday,colour ='black', fill='black'),alpha=0.7) +
-  geom_area(aes(x = time,y = weekend, fill='red'), alpha=0.7) +
-  ylim(0,max(B1$mean)*1.1) +
   geom_abline(intercept=A1_M, slope=0, colour="red", size=0.5) +
   annotate("text",x=2,y=790,label = A1_M,col = "blue")
 
