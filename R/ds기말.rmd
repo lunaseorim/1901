@@ -1,0 +1,111 @@
+---
+title: "데이터 과학입문 기말프로젝트"
+author: "김희수"
+date: '2019 5 17 '
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+#library(ggmap)
+library(plyr)
+library(ggforce)
+library(reshape2)
+library(rgeos)
+library(maptools)
+library(raster)
+library(readxl)
+
+
+#key <- "*"
+#register_google(key = key)
+```
+
+## DATA
+
+```{r asdfasdf}
+A1 <- read_xlsx("../doc/관광지.xlsx.")
+A2 <- as.data.frame(table(A1$`행정 구`))
+
+#write.csv(A2,"../doc/12.csv")
+
+#SET LOCALE ID
+A3 <- read.csv("../doc/12.csv")
+A3_1 <- data.frame(Var1 = NA,
+                   Freq = NA,
+                   id = 25:249)
+A3 <- rbind(A3,A3_1)
+A4 <- A2
+
+##GGMAP
+#seoulm <- get_map('seoul',zoom=12,maptype = 'roadmap',color = "bw")
+#seoulm_1 <-ggmap(seoulm,legend ='none') +
+#  geom_point(aes(x = lon, y = lat),
+#             size = 15,color="skyblue",alpha = 0.8, data = A4) +
+#  annotate("text",x=A4$lon,y=A4$lat,label = plotlab,
+#           size=5,color="white")
+#seoulm_1
+```
+
+## SET SHAPE
+
+```{r}
+seoul <- shapefile("../data/TL_SCCO_SIG.shp")
+seoul <- spTransform(seoul,CRS("+proj=longlat"))
+seoul_map <- fortify(seoul)
+merge_result <- merge(A3,seoul_map,by="id")
+
+#ggplot() +
+#  geom_polygon(data = merge_result,
+#               aes(x=long,y=lat,group=group,fill = Freq)) +
+#  coord_cartesian(xlim=c(126.75,127.22),
+#                  ylim=c(37.42,37.705)) +
+#  scale_fill_gradient(low = '#90E4FF',high='#1266FF',na.value = "white")
+```
+
+## API REQUEST
+
+```{r , echo=FALSE}
+#GET GEOCODE_CENTER
+library(httr)
+library(jsonlite)
+httpResponse <- GET(url = 
+                      paste0("https://api.bigdatahub.co.kr/v1/datahub/datasets/search.json?pid=1000908",
+                             "&$count=25"),
+                    add_headers(TDCAccessKey='*SKT_APIKEY*'),
+                    accept_json())
+getapi_data = fromJSON(content(httpResponse, "text"))
+geocode_center <- getapi_data$entry[-1]
+geocode_center$경도 <- as.numeric(geocode_center$경도)
+geocode_center$위도 <- as.numeric(geocode_center$위도)
+
+```
+
+## PLOT
+
+```{r}
+
+#SET GEOCODE_CENTER
+A4 <- merge(A4,geocode_center,by.x = "Var1",by.y="구")
+
+#CIRCLE
+plotlab <- paste0(A2$Var1,"\n",A2$Freq)
+
+ggplot() +
+  geom_polygon(data = merge_result,
+               aes(x=long,y=lat,group=group,fill = Freq),colour = "white",size=0.8,
+               show.legend = F) +
+  coord_cartesian(xlim=c(126.75,127.22),
+                  ylim=c(37.42,37.705)) +
+  scale_fill_gradient(low = '#90E4FF',high='#90E4FF',na.value = "white") +
+  theme_void() +
+  geom_point(aes(x = 경도, y = 위도), 
+            size = 15,color="skyblue",alpha = 1, data = A4) +
+  annotate("text",x=A4$경도,y=A4$위도,label = plotlab,
+           size=3,color="white")
+
+
+```
+

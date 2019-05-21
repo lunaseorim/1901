@@ -1,8 +1,8 @@
 {
-    "path" : "C:/Users/heesu/Desktop/dt/DS&BD/R",
+    "path" : "C:/Users/heesu/Desktop/dt/DS_BD/R",
     "sortOrder" : [
         {
-            "ascending" : true,
+            "ascending" : false,
             "columnIndex" : 2
         }
     ]

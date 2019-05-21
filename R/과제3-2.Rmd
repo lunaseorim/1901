@@ -6,36 +6,63 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+library(plyr)
 library(dplyr)
+library(magrittr)
 library(reshape2)
 library(ggplot2)
 ```
 
-## Data Preprocessing
+## Data 
 
-```{r Data Preprocessing}
-A1 <- read.csv("doc/1111111.csv")
+```{r Data}
+A1 <- read.csv("../doc/1111111.csv")
 
 D1 <- A1[,-24] %>%
   melt(.,id.vars = "Date") %>%
   na.omit
 
-
+##데이터
 W1 <- A1 %>%
   melt(., id.vars = c("Date","week")) %>%
   filter(!is.na(value)) %>%
-  ddply(.,~week~variable,colwise(mean, is.numeric)) 
+  ddply(.,~week~variable,colwise(mean, is.numeric))
 
+W2 <- A1 %>%
+  melt(., id.vars = c("Date","week")) %>%
+  filter(!is.na(value)) %>%
+  ddply(.,~week,colwise(mean, is.integer))
+
+#W1$week %<>%
+#  factor(levels = c("월","화","수","목","금","토","일"),
+#         labels = 1:7)
+#attach(W1)
+#m1 <- lm(value~week)
+#summary(m1)
+#plot(value~week) +
+#abline(m1,col="blue")
+#detach(W1)
+
+##전체평균
 All_AVG <- mean(W1$value)
 
-W2 <- W1 %>%
+##MATRIX (요일별)
+C2 <- W1 %>%
   dcast(variable~week) %>%
   select(월,화,수,목,금,토,일)
+
+##temp
+temp <- 1:118
+A2 <- A1 %>%
+  cbind(.,temp)
+
+
 ```
 
 ## Plots
 
 ```{r Plots, echo=FALSE}
+###전체SCATTER
 D1 %>%
   ggplot() +
   geom_point(aes(x=Date,y=value,
@@ -46,16 +73,31 @@ D1 %>%
         axis.text.x = element_blank(),
         axis.ticks = element_blank())
 
+###요일별 BOXPLOT V
 W1 %>%
   ggplot() +
   geom_boxplot(aes(x=week,y=value)) +
   scale_x_discrete(limits = c("월", "화", "수","목","금","토","일")) +
-  geom_abline(intercept=All_AVG, slope=0, colour="red", size=0.5)
+  geom_abline(intercept=All_AVG, slope=0, colour="skyblue", size=2)
 
-W1 %>%
+##요일별 평균치 PLOT V
+W2 %>%
   ggplot() +
-  geom_point(aes(x=week,y=value))+
-  scale_x_discrete(limits = c("월", "화", "수","목","금","토","일"))
+  geom_bar(aes(x=week,y=value),
+           stat = "identity",width = 0.7) +
+  scale_x_discrete(limits = c("월", "화", "수","목","금","토","일")) +
+  geom_abline(intercept=All_AVG, slope=0, colour="skyblue", size=2)
+
+###over5500 산점도 V
+
+A4 <- A4[c(4,7,3,2,1,6,5),]
+A4 %>%
+  ggplot(aes(x=week,y=value)) +
+  geom_point(color = "navy",size=4) +
+  scale_x_discrete(limits = c("월", "화", "수","목","금","토","일")) +
+  ylim(0,max(A4$value)*1.1)+
+  annotate("text",x=1:7+0.20,y=A4$value, label = A4$value ,col = "navy")
+
 
 ```
 
@@ -64,7 +106,8 @@ W1 %>%
 ```{r Test}
 #cor.test
 
-saveCorrel <- numeric(22) 
+Correl <- data.frame(id = paste0("id",1:22),
+                     value = numeric(22))
 
 for (i in 1:22) {
 
@@ -75,12 +118,19 @@ for (i in 1:22) {
       cor(B1,B3)
   }
   
-  saveCorrel[i] <- CorT(i)
+  Correl[i,2] <- CorT(i)
 }
 
-Correl <- data.frame(id = paste0("id",1:22),
-                     value = saveCorrel)
+##FOR LOOP//////////////////
 
-write.csv(Correl, "doc/Correl.csv")
+A3 <- A1
+for (i in 1:22) {
+  A3[ ,i+1] <- as.numeric(A3[,i+1]>=7781)
+}
+
+A3[is.na(A3)] <- 0
+A3$value <- rowSums(A3[,2:23])
+
+A4 <- ddply(A3,~week,summarize, value = sum(value))
 
 ```
