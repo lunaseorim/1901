@@ -11,18 +11,44 @@ editor_options:
 library(ggplot2)
 #library(ggmap)
 library(plyr)
-library(ggforce)
+library(dplyr)
 library(reshape2)
 library(rgeos)
 library(maptools)
 library(raster)
 library(readxl)
-
-
+library(httr)
+library(jsonlite)
 #key <- "*"
 #register_google(key = key)
 ```
 
+## GET TOURIST SPOT
+
+```{r GET TOURIST SPOT}
+
+AA <- NULL
+
+for (i in 1:59) {
+  GTS0 <- GET(url = paste0("http://korean.visitseoul.net/attractions",
+                                    "?curPage=",i),accept_json())
+  GTS1 <- fromJSON(content(GTS0,"text"))
+  AA <- rbind(AA,data.frame(place = GTS1$listVO$listObject$postSj,
+                      adrs = GTS1$listVO$listObject$adres))
+  cat(i,"/59","\n",sep = "")
+}
+
+AA0 <- AA %>%
+  na.omit()
+
+AA1 <- regmatches(AA0$adrs,regexpr("[가-힣]+(구)",AA0$adrs)) %>%
+  table %>%
+  as.data.frame() %>%
+  `colnames<-`(c("Var1","Freq"))
+
+write.csv(AA1,"doc/AA2.csv")
+
+```
 ## DATA
 
 ```{r asdfasdf}
@@ -32,12 +58,12 @@ A2 <- as.data.frame(table(A1$`행정 구`))
 #write.csv(A2,"../doc/12.csv")
 
 #SET LOCALE ID
-A3 <- read.csv("../doc/12.csv")
+A3 <- read.csv("../doc/AA2.csv")
 A3_1 <- data.frame(Var1 = NA,
                    Freq = NA,
                    id = 25:249)
 A3 <- rbind(A3,A3_1)
-A4 <- A2
+A4 <- read.csv("../doc/AA2.csv")
 
 ##GGMAP
 #seoulm <- get_map('seoul',zoom=12,maptype = 'roadmap',color = "bw")
@@ -65,18 +91,15 @@ merge_result <- merge(A3,seoul_map,by="id")
 #  scale_fill_gradient(low = '#90E4FF',high='#1266FF',na.value = "white")
 ```
 
-## API REQUEST
+## GET GEOCODE_CENTER
 
 ```{r , echo=FALSE}
-#GET GEOCODE_CENTER
-library(httr)
-library(jsonlite)
-httpResponse <- GET(url = 
+getgeocode <- GET(url = 
                       paste0("https://api.bigdatahub.co.kr/v1/datahub/datasets/search.json?pid=1000908",
                              "&$count=25"),
                     add_headers(TDCAccessKey='*SKT_APIKEY*'),
                     accept_json())
-getapi_data = fromJSON(content(httpResponse, "text"))
+getapi_data = fromJSON(content(getgeocode, "text"))
 geocode_center <- getapi_data$entry[-1]
 geocode_center$경도 <- as.numeric(geocode_center$경도)
 geocode_center$위도 <- as.numeric(geocode_center$위도)
@@ -91,7 +114,7 @@ geocode_center$위도 <- as.numeric(geocode_center$위도)
 A4 <- merge(A4,geocode_center,by.x = "Var1",by.y="구")
 
 #CIRCLE
-plotlab <- paste0(A2$Var1,"\n",A2$Freq)
+plotlab <- paste0(A4$Var1,"\n",A4$Freq)
 
 ggplot() +
   geom_polygon(data = merge_result,
@@ -102,7 +125,7 @@ ggplot() +
   scale_fill_gradient(low = '#90E4FF',high='#90E4FF',na.value = "white") +
   theme_void() +
   geom_point(aes(x = 경도, y = 위도), 
-            size = 15,color="skyblue",alpha = 1, data = A4) +
+            size = 15,color="#00C6ED",alpha = 1, data = A4) +
   annotate("text",x=A4$경도,y=A4$위도,label = plotlab,
            size=3,color="white")
 
