@@ -1,6 +1,6 @@
 ---
 title: "데이터 과학입문 기말프로젝트"
-author: "김희수"
+author: "3조"
 date: '2019 5 17 '
 output: html_document
 editor_options: 
@@ -9,7 +9,6 @@ editor_options:
 
 ```{r setup, include=FALSE}
 library(ggplot2)
-#library(ggmap)
 library(plyr)
 library(dplyr)
 library(reshape2)
@@ -19,44 +18,39 @@ library(raster)
 library(readxl)
 library(httr)
 library(jsonlite)
-#key <- "*"
-#register_google(key = key)
 ```
 
 ## GET TOURIST SPOT
 
 ```{r GET TOURIST SPOT}
+#
+#AA <- NULL
+#
+#for (i in 1:59) {
+#  GTS0 <- GET(url = #paste0("http://korean.visitseoul.net/attractions",
+#                                    "?curPage=",i),accept_json())
+#  GTS1 <- fromJSON(content(GTS0,"text"))
+#  AA <- rbind(AA,data.frame(place = GTS1$listVO$listObject$postSj,
+#                      adrs = GTS1$listVO$listObject$adres))
+#  cat(i,"/59","\n",sep = "")
+#}
 
-AA <- NULL
+#AA0 <- AA %>%
+#  na.omit()
 
-for (i in 1:59) {
-  GTS0 <- GET(url = paste0("http://korean.visitseoul.net/attractions",
-                                    "?curPage=",i),accept_json())
-  GTS1 <- fromJSON(content(GTS0,"text"))
-  AA <- rbind(AA,data.frame(place = GTS1$listVO$listObject$postSj,
-                      adrs = GTS1$listVO$listObject$adres))
-  cat(i,"/59","\n",sep = "")
-}
+#write.csv(AA0,"../doc/rawdata.csv")
 
-AA0 <- AA %>%
-  na.omit()
+#AA1 <- regmatches(AA0$adrs,regexpr("[가-힣]+(구)",AA0$adrs)) %>%
+#  table %>%
+#  as.data.frame() %>%
+#  `colnames<-`(c("Var1","Freq"))
 
-AA1 <- regmatches(AA0$adrs,regexpr("[가-힣]+(구)",AA0$adrs)) %>%
-  table %>%
-  as.data.frame() %>%
-  `colnames<-`(c("Var1","Freq"))
-
-write.csv(AA1,"doc/AA2.csv")
+#write.csv(AA1,"doc/AA2.csv")
 
 ```
 ## DATA
 
-```{r asdfasdf}
-A1 <- read_xlsx("../doc/관광지.xlsx.")
-A2 <- as.data.frame(table(A1$`행정 구`))
-
-#write.csv(A2,"../doc/12.csv")
-
+```{r DATA}
 #SET LOCALE ID
 A3 <- read.csv("../doc/AA2.csv")
 A3_1 <- data.frame(Var1 = NA,
@@ -65,14 +59,6 @@ A3_1 <- data.frame(Var1 = NA,
 A3 <- rbind(A3,A3_1)
 A4 <- read.csv("../doc/AA2.csv")
 
-##GGMAP
-#seoulm <- get_map('seoul',zoom=12,maptype = 'roadmap',color = "bw")
-#seoulm_1 <-ggmap(seoulm,legend ='none') +
-#  geom_point(aes(x = lon, y = lat),
-#             size = 15,color="skyblue",alpha = 0.8, data = A4) +
-#  annotate("text",x=A4$lon,y=A4$lat,label = plotlab,
-#           size=5,color="white")
-#seoulm_1
 ```
 
 ## SET SHAPE
@@ -83,12 +69,6 @@ seoul <- spTransform(seoul,CRS("+proj=longlat"))
 seoul_map <- fortify(seoul)
 merge_result <- merge(A3,seoul_map,by="id")
 
-#ggplot() +
-#  geom_polygon(data = merge_result,
-#               aes(x=long,y=lat,group=group,fill = Freq)) +
-#  coord_cartesian(xlim=c(126.75,127.22),
-#                  ylim=c(37.42,37.705)) +
-#  scale_fill_gradient(low = '#90E4FF',high='#1266FF',na.value = "white")
 ```
 
 ## GET GEOCODE_CENTER
@@ -97,38 +77,56 @@ merge_result <- merge(A3,seoul_map,by="id")
 getgeocode <- GET(url = 
                       paste0("https://api.bigdatahub.co.kr/v1/datahub/datasets/search.json?pid=1000908",
                              "&$count=25"),
-                    add_headers(TDCAccessKey='*SKT_APIKEY*'),
+                    add_headers(TDCAccessKey='	#55c155bca4d4ec0e16d51838827125e3f5906f9846db003df03d5f7fd2a7edba'),
                     accept_json())
-getapi_data = fromJSON(content(getgeocode, "text"))
-geocode_center <- getapi_data$entry[-1]
-geocode_center$경도 <- as.numeric(geocode_center$경도)
-geocode_center$위도 <- as.numeric(geocode_center$위도)
+
 
 ```
 
-## PLOT
+## PLOT 1
 
 ```{r}
 
 #SET GEOCODE_CENTER
+getapi_data = fromJSON(content(getgeocode, "text"))
+geocode_center <- getapi_data$entry[-1]
+geocode_center$경도 <- as.numeric(geocode_center$경도)
+geocode_center$위도 <- as.numeric(geocode_center$위도)
 A4 <- merge(A4,geocode_center,by.x = "Var1",by.y="구")
 
 #CIRCLE
 plotlab <- paste0(A4$Var1,"\n",A4$Freq)
 
+
+#png("test.png",width = 6.5, height = 4.9,units = "in",res = 1200)
 ggplot() +
   geom_polygon(data = merge_result,
                aes(x=long,y=lat,group=group,fill = Freq),colour = "white",size=0.8,
                show.legend = F) +
   coord_cartesian(xlim=c(126.75,127.22),
                   ylim=c(37.42,37.705)) +
-  scale_fill_gradient(low = '#90E4FF',high='#90E4FF',na.value = "white") +
-  theme_void() +
-  geom_point(aes(x = 경도, y = 위도), 
-            size = 15,color="#00C6ED",alpha = 1, data = A4) +
+  scale_fill_gradient(low = '#B3AEFF',high='#B3AEFF',na.value = "white") +
+  theme_void()+
+  geom_point(aes(x = 경도, y = 위도,colour = Freq), 
+            size = 15,alpha = 1, data = A4) +
+  scale_colour_gradient(high="#6B66FF" ,low="#8F8AFF") +
   annotate("text",x=A4$경도,y=A4$위도,label = plotlab,
            size=3,color="white")
-
+dev.off()
 
 ```
 
+## PLOT 2
+
+```{r PLOT2}
+B1 <- read.csv("../doc/관광경쟁력.csv")
+
+#png("test11.png",width = 6.5, height = 4.9,
+#    units = "in",res = 1200)
+ggplot(B1,aes(x=reorder(구, -종합지수),y=종합지수,fill=등급)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 43,size = 5,hjust = 0.8)) +
+  xlab("구")
+dev.off()
+
+```
