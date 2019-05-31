@@ -1,7 +1,7 @@
 ---
 title: "데이터 과학입문 기말프로젝트"
 author: "3조"
-date: '2019 5 17 '
+date: '2019 5 17'
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -18,16 +18,18 @@ library(raster)
 library(readxl)
 library(httr)
 library(jsonlite)
+knitr::opts_chunk$set(echo=T,message=F,warning=F,error = F)
 ```
 
 ## GET TOURIST SPOT
+출처:서울관광재단,VISIT SEOULNET - 명소 ,http://korean.visitseoul.net/attractions
 
 ```{r GET TOURIST SPOT}
 #
 #AA <- NULL
 #
 #for (i in 1:59) {
-#  GTS0 <- GET(url = #paste0("http://korean.visitseoul.net/attractions",
+#  GTS0 <- GET(url = paste0("http://korean.visitseoul.net/attractions",
 #                                    "?curPage=",i),accept_json())
 #  GTS1 <- fromJSON(content(GTS0,"text"))
 #  AA <- rbind(AA,data.frame(place = GTS1$listVO$listObject$postSj,
@@ -47,6 +49,9 @@ library(jsonlite)
 
 #write.csv(AA1,"doc/AA2.csv")
 
+GTS_R <- read.csv("../doc/rawdata.csv")
+kableExtra::kable(head(GTS_R))
+
 ```
 ## DATA
 
@@ -63,7 +68,7 @@ A4 <- read.csv("../doc/AA2.csv")
 
 ## SET SHAPE
 
-```{r}
+```{r }
 seoul <- shapefile("../data/TL_SCCO_SIG.shp")
 seoul <- spTransform(seoul,CRS("+proj=longlat"))
 seoul_map <- fortify(seoul)
@@ -72,20 +77,13 @@ merge_result <- merge(A3,seoul_map,by="id")
 ```
 
 ## GET GEOCODE_CENTER
-
-```{r , echo=FALSE}
+출처:SKT BIGDATAHUB, 서울시 구 중심좌표(위도,경도) 데이터, https://www.bigdatahub.co.kr/product/view.do?pid=1000908
+```{r }
 getgeocode <- GET(url = 
                       paste0("https://api.bigdatahub.co.kr/v1/datahub/datasets/search.json?pid=1000908",
                              "&$count=25"),
-                    add_headers(TDCAccessKey='	#55c155bca4d4ec0e16d51838827125e3f5906f9846db003df03d5f7fd2a7edba'),
+                    add_headers(TDCAccessKey='55c155bca4d4ec0e16d51838827125e3f5906f9846db003df03d5f7fd2a7edba'),
                     accept_json())
-
-
-```
-
-## PLOT 1
-
-```{r}
 
 #SET GEOCODE_CENTER
 getapi_data = fromJSON(content(getgeocode, "text"))
@@ -94,7 +92,12 @@ geocode_center$경도 <- as.numeric(geocode_center$경도)
 geocode_center$위도 <- as.numeric(geocode_center$위도)
 A4 <- merge(A4,geocode_center,by.x = "Var1",by.y="구")
 
-#CIRCLE
+```
+
+## PLOT 1
+
+```{r}
+#CIRCLE LABEL
 plotlab <- paste0(A4$Var1,"\n",A4$Freq)
 
 
@@ -112,21 +115,42 @@ ggplot() +
   scale_colour_gradient(high="#6B66FF" ,low="#8F8AFF") +
   annotate("text",x=A4$경도,y=A4$위도,label = plotlab,
            size=3,color="white")
-dev.off()
+#dev.off()
 
 ```
 
 ## PLOT 2
+출처:한국관광공사,관광경쟁력 진단결과 https://kto.visitkorea.or.kr/kor/biz/consulting/stance/diagResult.kto
 
 ```{r PLOT2}
 B1 <- read.csv("../doc/관광경쟁력.csv")
 
-#png("test11.png",width = 6.5, height = 4.9,
-#    units = "in",res = 1200)
+#png("test11.png",width = 6.5, height = 4.9,units = "in",res = 1200)
 ggplot(B1,aes(x=reorder(구, -종합지수),y=종합지수,fill=등급)) +
   geom_bar(stat = "identity") +
   theme(axis.text.x = element_text(angle = 43,size = 5,hjust = 0.8)) +
   xlab("구")
-dev.off()
+#dev.off()
 
+```
+
+## PLOT 3
+
+```{r PLOT3}
+lm(인구밀도~종합지수,data = B1)
+
+lm1 <- cor(B1$인구밀도,B1$종합지수)
+
+#png("test12.png",width = 6.5, height = 4.9,units = "in",res = 1200)
+ggplot() +
+  geom_point(aes(x = 종합지수,y=인구밀도,colour = 등급),
+             data = B1,size = 2) +
+  geom_abline(intercept = 43371, slope = -255 , 
+              col = "purple", lty = 2,size=1) +
+  ylab("인구밀도(명/km^2)") +
+  xlab("관광경쟁력 종합지수") +
+  annotate("text",x=125,y=20000,label="cor = -0.6301",
+           size = 6,col = "purple")
+#dev.off()
+  
 ```
