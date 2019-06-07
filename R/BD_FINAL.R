@@ -1,4 +1,4 @@
-A1 <- read.csv("2009_v.csv")
+A1 <- read.csv("doc/2009_v.csv")
 
 A2 <- A1[,c(5,6,10,11,12,14,16)]
 
@@ -29,9 +29,9 @@ test <- A3[nrow(A3)/2+1:nrow(A3),]
 
 library(dplyr)
 library(plyr)
+library(ggplot2)
 A3 <- A3 %>%
   na.omit()
-A3 <- A3[A3$진료과목코드 == c(1,4,7,10,11,13,14,23,24), ]
 
 okfine <- lm(입내원일수~성별코드+연령대코드+진료과목코드+
                     심결요양급여비용총액+sub,data = train)
@@ -39,9 +39,24 @@ okfine <- lm(입내원일수~성별코드+연령대코드+진료과목코드+
 summary(okfine)
 
 pred <- predict(okfine,newdata=test)
-cor(pred,test$입내원일수,use="pairwise.complete.obs")
+cor1 <- cor(pred,test$입내원일수,use="pairwise.complete.obs")
 
-test2 <- read.csv("2011_v.csv")
+ploting <- data.frame(pred =pred,
+                      value = test$입내원일수)
+
+coef<-okfine$coef
+labels=as.character(A)
+intercept=coef[1]+coef[2]
+slope=coef[3]+coef[4]
+intercep
+
+ggplot(aes(x=value,y=pred),data = ploting)+
+  geom_point() +
+  xlim(0,5) +
+  ylim(0,5) +
+  geom_smooth(method = "lm")
+
+test2 <- read.csv("doc/2011_v.csv")
 test2_1 <- test2[,c(5,6,10,11,12,14,16)]
 
 test2_2 <- transform(test2,
