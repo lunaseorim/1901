@@ -1,3 +1,9 @@
+
+library(dplyr)
+library(plyr)
+library(ggplot2)
+
+
 A1 <- read.csv("doc/jong.csv")
 
 A2 <- A1
@@ -5,60 +11,47 @@ A2 <- A1[,c(5,6,10,11,12,14,16)]
 
 Z1 <- data.frame(table(A3$진료과목코드))
 
+Z2 <- A3 %>%
+  group_by(부상병코드) %>%
+  summarise(value = mean(심결본인부담금))
+
+Z3 <- data.frame(table(A3$부상병코드))
+Z2 <- ddply(A3,~부상병코드,summarise,value = mean(심결본인부담금))
+Z3 <- merge(Z2,Z3,by.x = "부상병코드",by.y = "Var1" )
+
+
+
 A3 <- transform(A2,
                 main = ifelse(A2$주상병코드 == "B01"|
                                 A2$주상병코드 == "B018"|
                                 A2$주상병코드 == "B019",1,NA),
-                sub = ifelse(A2$부상병코드 == "J209",1,
-                             ifelse(A2$부상병코드 == "L299",2,
-                             ifelse(A2$부상병코드 == "J304",3,
-                             ifelse(A2$부상병코드 == "L509",4,
-                             ifelse(A2$부상병코드 == "L239",5,
-                             ifelse(A2$부상병코드 == "J00",6,
-                             ifelse(A2$부상병코드 == "J069",7,0)))))
-                             )
-                ))
-
-prop.table(table(A3$성별코드))
-
-
-A3$sub <- factor(A3$sub)
-A3$main <- factor(A3$main)
-A3$성별코드 <- factor(A3$성별코드)
-A3$심결가산율 <- factor(A3$심결가산율)
-A3$진료과목코드 <- factor(A3$진료과목코드)
-A3$연령대코드 <- (5*(A3$연령대코드-1)+5*(A3$연령대코드)-1)/2
+                sub = ifelse(A2$부상병코드 == "L309",1,
+                             ifelse(A2$부상병코드 == "R509",2,
+                             ifelse(A2$부상병코드 == "L010",3,
+                             ifelse(A2$부상병코드 == "B029",4,0)))))
+     
+A3 <- A3 %>%
+  na.omit()
 
 A3 <- A3[A3$진료과목코드==1|A3$진료과목코드==4|A3$진료과목코드==11|
            A3$진료과목코드==14|A3$진료과목코드==23,]
 
+A3$sub <- factor(A3$sub)
+A3$main <- factor(A3$main)
+A3$성별코드 <- factor(A3$성별코드)
+A3$진료과목코드 <- factor(A3$진료과목코드)
+A3$연령대코드 <- (5*(A3$연령대코드-1)+5*(A3$연령대코드)-1)/2
+
+
+
 train <- A3[1:13186,] #70%
 test <- A3[13187:nrow(A3),] #30%
 
-library(dplyr)
-library(plyr)
-library(ggplot2)
-A3 <- A3 %>%
-  na.omit()
-
-train1 <- train[train$진료과목코드==14|
-                  train$진료과목코드==23,]
-test1 <- test[test$진료과목코드==14|
-                test$진료과목코드==23,]
 
 okfine <- lm(심결본인부담금~연령대코드+진료과목코드+
-                  심결가산율+입내원일수,data = train)
-
-
-
-ok2 <- lm(심결본인부담금~연령대코드,data=train)
+                  심결가산율+입내원일수+sub,data = train)
 
 summary(okfine)
-attach(train)
-plot(심결본인부담금~연령대코드)
-abline(okfine$model$연령대코드)
-
-relweights(okfine)
 
 pred <- predict(okfine,newdata=test1)
 cor(pred,test1$심결본인부담금,use="pairwise.complete.obs")
